@@ -1,0 +1,45 @@
+name: Créer ControleTissu.exe
+
+on:
+  push:
+    branches:
+      - main
+      - master
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Récupérer le code
+        uses: actions/checkout@v5
+
+      - name: Installer Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Installer les dépendances
+        shell: pwsh
+        run: python -m pip install --upgrade pip; pip install -r requirements.txt
+
+      - name: Construire le .exe
+        shell: pwsh
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name ControleTissu --icon icon.ico --add-data "templates;templates" logiciel.py
+
+      - name: Récupérer le .exe
+        uses: actions/upload-artifact@v5
+        with:
+          name: ControleTissu
+          path: dist/ControleTissu.exe
+
+      - name: Publier dans Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/ControleTissu.exe
